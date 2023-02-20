@@ -393,6 +393,19 @@ class InternalDeprecation(WarnLevel, pt.InternalDeprecation):
         return warning_tag(msg)
 
 
+@dataclass
+class EnvironmentVariableRenamed(WarnLevel, pt.EnvironmentVariableRenamed):  # noqa
+    def code(self):
+        return "D009"
+
+    def message(self):
+        description = (
+            f"The environment variable `{self.old_name}` has been renamed to `{self.new_name}`. "
+            f"Since `{self.old_name}` has been set, its value will be used instead of `{self.new_name}`."
+        )
+        return line_wrap_message(warning_tag(f"Deprecated functionality\n\n{description}"))
+
+
 # =======================================================
 # E - DB Adapter
 # =======================================================
