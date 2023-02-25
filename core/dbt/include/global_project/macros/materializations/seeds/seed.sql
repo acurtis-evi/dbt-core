@@ -1,9 +1,12 @@
 {% materialization seed, default %}
 
   {%- set identifier = model['alias'] -%}
-  {%- set full_refresh_mode = (should_full_refresh()) -%}
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
+
+  {% if should_run_model('seed') %}
+
+  {%- set full_refresh_mode = (should_full_refresh()) -%}
 
   {%- set exists_as_table = (old_relation is not none and old_relation.is_table) -%}
   {%- set exists_as_view = (old_relation is not none and old_relation.is_view) -%}
@@ -56,5 +59,8 @@
   {{ run_hooks(post_hooks, inside_transaction=False) }}
 
   {{ return({'relations': [target_relation]}) }}
+  {% else %}
+  {{ return({'relations': [old_relation]}) }}
+  {% endif %}
 
 {% endmaterialization %}

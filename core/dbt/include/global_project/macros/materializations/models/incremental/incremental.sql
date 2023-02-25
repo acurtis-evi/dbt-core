@@ -4,6 +4,7 @@
   -- relations
   {%- set existing_relation = load_cached_relation(this) -%}
   {%- set target_relation = this.incorporate(type='table') -%}
+  {% if should_run_model('incremental') %}
   {%- set temp_relation = make_temp_relation(target_relation)-%}
   {%- set intermediate_relation = make_intermediate_relation(target_relation)-%}
   {%- set backup_relation_type = 'table' if existing_relation is none else existing_relation.type -%}
@@ -86,7 +87,7 @@
   {% endfor %}
 
   {{ run_hooks(post_hooks, inside_transaction=False) }}
-
+  {% endif %}
   {{ return({'relations': [target_relation]}) }}
 
 {%- endmaterialization %}

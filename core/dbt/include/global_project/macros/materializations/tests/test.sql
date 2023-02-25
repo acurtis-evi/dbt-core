@@ -2,6 +2,8 @@
 
   {% set relations = [] %}
 
+  {% if should_run_model('test') %}
+
   {% if should_store_failures() %}
 
     {% set identifier = model['alias'] %}
@@ -42,7 +44,13 @@
     {{ get_test_sql(main_sql, fail_calc, warn_if, error_if, limit)}}
 
   {%- endcall %}
-
+  {% else %}
+    {% if should_store_failures() %}
+        {% set identifier = model['alias'] %}
+        {% set relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) %}
+        {% do relations.append(target_relation) %}
+    {% endif %}
+  {% endif %}
   {{ return({'relations': relations}) }}
 
 {%- endmaterialization -%}

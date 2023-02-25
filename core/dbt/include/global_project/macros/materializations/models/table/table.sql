@@ -2,6 +2,7 @@
 
   {%- set existing_relation = load_cached_relation(this) -%}
   {%- set target_relation = this.incorporate(type='table') %}
+  {% if should_run_model('table') %}
   {%- set intermediate_relation =  make_intermediate_relation(target_relation) -%}
   -- the intermediate_relation should not already exist in the database; get_relation
   -- will return None in that case. Otherwise, we get a relation that we can drop
@@ -54,6 +55,6 @@
   {{ drop_relation_if_exists(backup_relation) }}
 
   {{ run_hooks(post_hooks, inside_transaction=False) }}
-
+  {% endif %}
   {{ return({'relations': [target_relation]}) }}
 {% endmaterialization %}
