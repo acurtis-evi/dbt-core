@@ -4,7 +4,7 @@
 
 {% macro should_run_model(type) %}
     {{ return(True) }}
-{% endif %}
+{% endmacro %}
 
 {% macro should_full_refresh() %}
   {% set config_full_refresh = config.get('full_refresh') %}
