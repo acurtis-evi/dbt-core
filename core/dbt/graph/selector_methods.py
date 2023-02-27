@@ -1,4 +1,5 @@
-import abc, fnmatch
+import abc
+import fnmatch
 from itertools import chain
 from pathlib import Path
 from typing import Set, List, Dict, Iterator, Tuple, Any, Union, Type, Optional, Callable
@@ -650,6 +651,7 @@ class MethodManager:
         self.previous_state = previous_state
 
     def get_method(self, method: MethodName, method_arguments: List[str]) -> SelectorMethod:
+
         if method not in self.SELECTOR_METHODS:
             raise InternalException(
                 f'Method name "{method}" is a valid node selection '
