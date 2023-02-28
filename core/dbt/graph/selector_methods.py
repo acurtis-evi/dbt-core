@@ -1,4 +1,5 @@
 import abc
+import fnmatch
 from itertools import chain
 from pathlib import Path
 from typing import Set, List, Dict, Iterator, Tuple, Any, Union, Type, Optional, Callable
@@ -51,11 +52,16 @@ class MethodName(StrEnum):
     Result = "result"
     SourceStatus = "source_status"
 
+def wildcard_match(key, value):
+    if key == value:
+        return True
+    filtered = fnmatch.filter([value.lower()], key.lower())
+    return True if len(filtered) > 0 else False
 
 def is_selected_node(fqn: List[str], node_selector: str):
 
     # If qualified_name exactly matches model name (fqn's leaf), return True
-    if fqn[-1] == node_selector:
+    if wildcard_match(node_selector, fqn[-1]):
         return True
     # Flatten node parts. Dots in model names act as namespace separators
     flat_fqn = [item for segment in fqn for item in segment.split(".")]
@@ -194,7 +200,12 @@ class TagSelectorMethod(SelectorMethod):
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
         """yields nodes from included that have the specified tag"""
         for node, real_node in self.all_nodes(included_nodes):
-            if selector in real_node.tags:
+            found = False
+            for tag in real_node.tags:
+                if wildcard_match(selector, tag):
+                    found = True
+                    break
+            if found:
                 yield node
 
 
@@ -218,15 +229,16 @@ class SourceSelectorMethod(SelectorMethod):
             ).format(selector)
             raise RuntimeException(msg)
 
-        for node, real_node in self.source_nodes(included_nodes):
-            if target_package not in (real_node.package_name, SELECTOR_GLOB):
-                continue
-            if target_source not in (real_node.source_name, SELECTOR_GLOB):
-                continue
-            if target_table not in (None, real_node.name, SELECTOR_GLOB):
-                continue
+        if target_table is not None:
+            for node, real_node in self.source_nodes(included_nodes):
+                if not wildcard_match(target_package, real_node.package_name):
+                    continue
+                if not wildcard_match(target_source, real_node.source_name):
+                    continue
+                if not wildcard_match(target_table, real_node.name):
+                    continue
 
-            yield node
+                yield node
 
 
 class ExposureSelectorMethod(SelectorMethod):
@@ -246,9 +258,9 @@ class ExposureSelectorMethod(SelectorMethod):
             raise RuntimeException(msg)
 
         for node, real_node in self.exposure_nodes(included_nodes):
-            if target_package not in (real_node.package_name, SELECTOR_GLOB):
+            if not wildcard_match(target_package, real_node.package_name):
                 continue
-            if target_name not in (real_node.name, SELECTOR_GLOB):
+            if not wildcard_match(target_name, real_node.name):
                 continue
 
             yield node
@@ -271,9 +283,9 @@ class MetricSelectorMethod(SelectorMethod):
             raise RuntimeException(msg)
 
         for node, real_node in self.metric_nodes(included_nodes):
-            if target_package not in (real_node.package_name, SELECTOR_GLOB):
+            if not wildcard_match(target_package, real_node.package_name):
                 continue
-            if target_name not in (real_node.name, SELECTOR_GLOB):
+            if not wildcard_match(target_name, real_node.name):
                 continue
 
             yield node
@@ -299,7 +311,7 @@ class FileSelectorMethod(SelectorMethod):
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
         """Yields nodes from included that match the given file name."""
         for node, real_node in self.all_nodes(included_nodes):
-            if Path(real_node.original_file_path).name == selector:
+            if wildcard_match(selector, Path(real_node.original_file_path).name):
                 yield node
 
 
@@ -307,7 +319,7 @@ class PackageSelectorMethod(SelectorMethod):
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
         """Yields nodes from included that have the specified package"""
         for node, real_node in self.all_nodes(included_nodes):
-            if real_node.package_name == selector:
+            if wildcard_match(selector, real_node.package_name):
                 yield node
 
 
