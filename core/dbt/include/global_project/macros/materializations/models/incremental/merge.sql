@@ -2,8 +2,18 @@
   {{ adapter.dispatch('get_merge_sql', 'dbt')(target, source, unique_key, dest_columns, predicates) }}
 {%- endmacro %}
 
-{% macro default__get_merge_sql(target, source, unique_key, dest_columns, predicates) -%}
+{% macro default__get_merge_sql(target, source, unique_key, dest_columns_inp, predicates) -%}
     {%- set predicates = [] if predicates is none else [] + predicates -%}
+    {% if config.get('delete_column') %}
+        {% set dest_columns=[] %}
+        {% for column in dest_columns_inp %}
+            {% if column.column | lower != config.get('delete_column') | lower %}
+                {% do dest_columns.append(column) %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% set dest_columns=dest_columns_inp %}
+    {% endif %}
     {%- set dest_cols_csv = get_quoted_csv(dest_columns | map(attribute="name")) -%}
     {%- set merge_update_columns = config.get('merge_update_columns') -%}
     {%- set merge_exclude_columns = config.get('merge_exclude_columns') -%}
@@ -34,15 +44,31 @@
         using {{ source }} as DBT_INTERNAL_SOURCE
         on {{ predicates | join(' and ') }}
 
+    {% if config.get('delete_column') %}
+    when matched and DBT_INTERNAL_SOURCE.{{ config.get('delete_column') }}='{{ config.get('delete_value') }}' then delete
+    {% endif %}
+
     {% if unique_key %}
-    when matched then update set
+    when matched
+    {%- if config.get('delete_column') %}
+         and (DBT_INTERNAL_SOURCE.{{ config.get('delete_column') }} is null or DBT_INTERNAL_SOURCE.{{ config.get('delete_column') }}<>'{{ config.get('delete_value') }}')
+    {%- endif %}
+        then update set
         {% for column_name in update_columns -%}
-            {{ column_name }} = DBT_INTERNAL_SOURCE.{{ column_name }}
+            {%- if column_name is string %}
+                {{ column_name }} = DBT_INTERNAL_SOURCE.{{ column_name }}
+            {%- else %}
+                {{ column_name.name }} = {{ column_name.value }}
+            {%- endif %}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
     {% endif %}
 
-    when not matched then insert
+    when not matched
+     {%- if config.get('delete_column') %}
+         and (DBT_INTERNAL_SOURCE.{{ config.get('delete_column') }} is null or DBT_INTERNAL_SOURCE.{{ config.get('delete_column') }}<>'{{ config.get('delete_value') }}')
+     {%- endif %}
+    then insert
         ({{ dest_cols_csv }})
     values
         ({{ dest_cols_csv }})
