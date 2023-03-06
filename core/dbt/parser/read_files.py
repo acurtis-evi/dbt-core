@@ -95,7 +95,7 @@ def validate_yaml(file_path, dct):
 
 # Special processing for big seed files
 def load_seed_source_file(match: FilePath, project_name) -> SourceFile:
-    if match.file_size() < MAXIMUM_SEED_SIZE:
+    if match.file_size() > MAXIMUM_SEED_SIZE:
         # We don't want to calculate a hash of this file. Use the path.
         source_file = SourceFile.big_seed(match)
     elif match.file_size() <= DEFAULT_MAXIMUM_SEED_SIZE:
