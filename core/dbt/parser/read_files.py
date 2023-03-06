@@ -99,6 +99,9 @@ def load_seed_source_file(match: FilePath, project_name) -> SourceFile:
         # We don't want to calculate a hash of this file. Use the path.
         source_file = SourceFile.big_seed(match)
     elif match.file_size() <= DEFAULT_MAXIMUM_SEED_SIZE:
+        # This is here because the original seed calculation used utf8
+        # and the FileHash.from_path does not.  This will leave hashes
+        # unchanged for previous installations.
         file_contents = load_file_contents(match.absolute_path, strip=False)
         checksum = FileHash.from_contents(file_contents)
         source_file = SourceFile(path=match, checksum=checksum)
