@@ -104,8 +104,9 @@ def load_seed_source_file(match: FilePath, project_name) -> SourceFile:
         source_file = SourceFile(path=match, checksum=checksum)
         source_file.contents = ""
     else:
-        # Do new hash method
-        pass
+        checksum = FileHash.from_path(match.absolute_path)
+        source_file = SourceFile(path=match, checksum=checksum)
+        source_file.contents = ""
     source_file.parse_file_type = ParseFileType.Seed
     source_file.project_name = project_name
     return source_file
