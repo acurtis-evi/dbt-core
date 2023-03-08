@@ -45,6 +45,8 @@ class MethodName(StrEnum):
     Metric = "metric"
     Result = "result"
     SourceStatus = "source_status"
+    SubMaterialization = "submaterialization"
+    Selector = "selector"
 
 
 def is_selected_node(fqn: List[str], node_selector: str):
@@ -180,6 +182,12 @@ class QualifiedNameSelectorMethod(SelectorMethod):
             if self.node_is_match(selector, real_node.fqn):
                 yield node
 
+class SubMaterializationSelectorMethod(SelectorMethod):
+    def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
+        """yields nodes from included that have the specified tag"""
+        for node, real_node in self.all_nodes(included_nodes):
+            if real_node.config.get('submaterializations') and any(fnmatch(sub, selector) for sub in real_node.config.get('submaterializations')):
+                yield node
 
 class TagSelectorMethod(SelectorMethod):
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
@@ -618,6 +626,7 @@ class MethodManager:
         MethodName.Metric: MetricSelectorMethod,
         MethodName.Result: ResultSelectorMethod,
         MethodName.SourceStatus: SourceStatusSelectorMethod,
+        MethodName.SubMaterialization: SubMaterializationSelectorMethod,
     }
 
     def __init__(
@@ -627,6 +636,10 @@ class MethodManager:
     ):
         self.manifest = manifest
         self.previous_state = previous_state
+        self.submaterialization = None
+
+    def set_submaterialization(self, submaterialization):
+        self.submaterialization = submaterialization
 
     def get_method(self, method: MethodName, method_arguments: List[str]) -> SelectorMethod:
 
