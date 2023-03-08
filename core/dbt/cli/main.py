@@ -86,6 +86,7 @@ def cli(ctx, **kwargs):
 @p.show
 @p.state
 @p.store_failures
+@p.submaterialization
 @p.target
 @p.target_path
 @p.threads
@@ -172,6 +173,7 @@ def docs_serve(ctx, **kwargs):
 @p.project_dir
 @p.selector
 @p.state
+@p.submaterialization
 @p.target
 @p.target_path
 @p.threads
@@ -190,6 +192,7 @@ def compile(ctx, **kwargs):
 @p.profile
 @p.profiles_dir
 @p.project_dir
+@p.submaterialization
 @p.target
 @p.vars
 @p.version_check
@@ -242,6 +245,7 @@ def init(ctx, **kwargs):
 @p.resource_type
 @p.selector
 @p.state
+@p.submaterialization
 @p.target
 @p.vars
 def list(ctx, **kwargs):
@@ -258,6 +262,7 @@ def list(ctx, **kwargs):
 @p.profile
 @p.profiles_dir
 @p.project_dir
+@p.submaterialization
 @p.target
 @p.target_path
 @p.threads
@@ -284,6 +289,7 @@ def parse(ctx, **kwargs):
 @p.project_dir
 @p.selector
 @p.state
+@p.submaterialization
 @p.target
 @p.target_path
 @p.threads

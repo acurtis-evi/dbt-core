@@ -68,6 +68,10 @@ class ManifestTask(ConfiguredTask):
         super().__init__(args, config)
         self.manifest: Optional[Manifest] = None
         self.graph: Optional[Graph] = None
+        if self.args.submaterialization is not None:
+            self.config.submaterialization = self.args.submaterialization
+        else:
+            self.config.submaterialization = None
 
     def write_manifest(self):
         if flags.WRITE_JSON:
@@ -136,6 +140,11 @@ class GraphRunnableTask(ManifestTask):
 
     def get_selection_spec(self) -> SelectionSpec:
         default_selector_name = self.config.get_default_selector_name()
+
+        self.config.arg_selector = None
+        if self.selection_arg or self.exclusion_arg:
+            self.config.arg_selector = parse_difference(self.selection_arg, self.exclusion_arg, indirect_selection)
+
         if self.args.selector_name:
             # use pre-defined selector (--selector)
             spec = self.config.get_selector(self.args.selector_name)
@@ -158,8 +167,10 @@ class GraphRunnableTask(ManifestTask):
 
     def get_graph_queue(self) -> GraphQueue:
         selector = self.get_node_selector()
+        if self.config.submaterialization:
+            selector.set_submaterialization(self.config.submaterialization)
         spec = self.get_selection_spec()
-        return selector.get_graph_queue(spec)
+        return selector.get_graph_queue(spec, self.config)
 
     def _runtime_initialize(self):
         super()._runtime_initialize()
